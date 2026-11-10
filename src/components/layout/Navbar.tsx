@@ -11,7 +11,8 @@ import {
   Play, 
   Pause,
   AlertTriangle,
-  Server
+  Server,
+  Siren
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -33,79 +34,72 @@ export const Navbar: React.FC = () => {
   const activeClusters = clusters.filter((c) => !c.resolved).length;
 
   return (
-    <header className="border-b border-slate-800 bg-[#090E1A]/90 backdrop-blur sticky top-0 z-40">
+    <header className="border-b border-rose-950 bg-[#09090b] sticky top-0 z-40">
+      {/* Top SRE Alert Ticker */}
+      <div className="bg-rose-950/40 border-b border-rose-900/30 px-4 py-1 text-[10px] font-mono flex items-center justify-between text-rose-300">
+        <div className="flex items-center space-x-3">
+          <span className="font-bold flex items-center space-x-1 text-rose-400">
+            <Siren className="w-3.5 h-3.5 animate-pulse text-rose-500" />
+            <span>SRE COMMAND: WAR ROOM ACTIVE</span>
+          </span>
+          <span className="hidden sm:inline text-rose-800">|</span>
+          <span className="hidden sm:inline text-rose-400">OUTAGE PROBES: 8/8 ENGINES POLLING</span>
+          {activeScenario && (
+            <span className="hidden md:inline px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-200 border border-rose-500/40 font-bold">
+              ACTIVE DRILL: {activeScenario.name}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center space-x-3">
+          <span className="text-rose-400">P1 ALERTS: <b className="text-white">{p1Count}</b></span>
+          <span className="text-rose-800">|</span>
+          <span className="text-rose-400">CLUSTERS: <b className="text-white">{activeClusters}</b></span>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-14">
           {/* Brand */}
           <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('overview')}>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-700 flex items-center justify-center shadow-lg shadow-cyan-500/20 border border-cyan-400/30">
-              <Activity className="w-5 h-5 text-white animate-pulse" />
+            <div className="w-8 h-8 rounded bg-rose-950 border border-rose-500/50 flex items-center justify-center shadow-lg shadow-rose-950/50">
+              <Flame className="w-4 h-4 text-rose-500" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-bold text-lg tracking-tight text-white font-mono">
-                  Campus<span className="text-cyan-400">Pulse</span>
+                <span className="font-bold text-base tracking-tight text-white font-mono">
+                  CAMPUS<span className="text-rose-500">PULSE</span>
                 </span>
-                <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono">
-                  SRE NOC
+                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-rose-500/10 text-rose-400 border border-rose-500/30 font-mono">
+                  INCIDENT OPS
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 hidden sm:block">Campus Infrastructure & Incident Observability</p>
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="hidden md:flex items-center space-x-1">
+          <nav className="flex items-center space-x-1 text-xs font-mono font-medium">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition-all ${
+              className={`px-2.5 py-1 rounded transition-all ${
                 activeTab === 'overview'
-                  ? 'bg-slate-800 text-cyan-400 border border-slate-700 shadow-sm'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                  ? 'bg-rose-950/80 text-rose-300 border border-rose-600/60 font-bold'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
               }`}
             >
-              <Radio className="w-3.5 h-3.5" />
-              <span>NOC HUD</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('services')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition-all ${
-                activeTab === 'services'
-                  ? 'bg-slate-800 text-cyan-400 border border-slate-700 shadow-sm'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
-              }`}
-            >
-              <Server className="w-3.5 h-3.5" />
-              <span>Services Matrix</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('network')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition-all ${
-                activeTab === 'network'
-                  ? 'bg-slate-800 text-cyan-400 border border-slate-700 shadow-sm'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
-              }`}
-            >
-              <Network className="w-3.5 h-3.5" />
-              <span>Network Telemetry</span>
+              [ WAR ROOM ]
             </button>
 
             <button
               onClick={() => setActiveTab('incidents')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition-all relative ${
+              className={`px-2.5 py-1 rounded transition-all relative ${
                 activeTab === 'incidents'
-                  ? 'bg-slate-800 text-cyan-400 border border-slate-700 shadow-sm'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                  ? 'bg-rose-950/80 text-rose-300 border border-rose-600/60 font-bold'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
               }`}
             >
-              <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
-              <span>Incidents</span>
+              <span>INCIDENTS</span>
               {activeIncidents.length > 0 && (
-                <span className={`ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono border ${
-                  p1Count > 0 ? 'bg-rose-500/20 text-rose-400 border-rose-500/30 font-bold animate-pulse' : 'bg-slate-700 text-slate-300 border-slate-600'
-                }`}>
+                <span className="ml-1.5 px-1 py-0.2 text-[9px] rounded bg-rose-600 text-white font-bold">
                   {activeIncidents.length}
                 </span>
               )}
@@ -113,112 +107,85 @@ export const Navbar: React.FC = () => {
 
             <button
               onClick={() => setActiveTab('clustering')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition-all relative ${
+              className={`px-2.5 py-1 rounded transition-all ${
                 activeTab === 'clustering'
-                  ? 'bg-slate-800 text-cyan-400 border border-slate-700 shadow-sm'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                  ? 'bg-rose-950/80 text-rose-300 border border-rose-600/60 font-bold'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
               }`}
             >
-              <GitMerge className="w-3.5 h-3.5 text-indigo-400" />
-              <span>AI Clustering</span>
-              {activeClusters > 0 && (
-                <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping ml-1" />
-              )}
+              <span>CLUSTERS ({activeClusters})</span>
             </button>
 
             <button
               onClick={() => setActiveTab('scenarios')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition-all relative ${
+              className={`px-2.5 py-1 rounded transition-all ${
                 activeTab === 'scenarios'
-                  ? 'bg-slate-800 text-cyan-400 border border-slate-700 shadow-sm'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                  ? 'bg-rose-950/80 text-rose-300 border border-rose-600/60 font-bold'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
               }`}
             >
-              <Flame className="w-3.5 h-3.5 text-amber-400" />
-              <span>Outage Simulator</span>
-              {activeScenario && (
-                <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping ml-1" />
-              )}
+              <span>CHAOS DRILLS</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('network')}
+              className={`px-2.5 py-1 rounded transition-all ${
+                activeTab === 'network'
+                  ? 'bg-rose-950/80 text-rose-300 border border-rose-600/60 font-bold'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
+              }`}
+            >
+              <span>METRICS</span>
             </button>
           </nav>
 
-          {/* Controls */}
+          {/* Right Action */}
           <div className="flex items-center space-x-2">
             <button
               onClick={toggleSimulation}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-mono font-medium flex items-center space-x-1.5 border transition-all ${
+              className={`px-2.5 py-1 rounded text-xs font-mono font-bold flex items-center space-x-1.5 border transition-all ${
                 isSimulating
-                  ? 'bg-cyan-950/40 text-cyan-300 border-cyan-500/30 hover:bg-cyan-900/40'
-                  : 'bg-amber-950/40 text-amber-300 border-amber-500/30 hover:bg-amber-900/40'
+                  ? 'bg-rose-950 text-rose-300 border-rose-600/50 hover:bg-rose-900'
+                  : 'bg-zinc-900 text-zinc-400 border-zinc-700'
               }`}
             >
-              {isSimulating ? (
-                <>
-                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                  <span>NOC ACTIVE</span>
-                  <Pause className="w-3 h-3 ml-1 opacity-70" />
-                </>
-              ) : (
-                <>
-                  <span className="w-2 h-2 rounded-full bg-amber-400" />
-                  <span>PAUSED</span>
-                  <Play className="w-3 h-3 ml-1 opacity-70" />
-                </>
-              )}
+              {isSimulating ? <Pause className="w-3 h-3 text-rose-400" /> : <Play className="w-3 h-3 text-emerald-400" />}
+              <span className="hidden sm:inline">{isSimulating ? 'PAUSE' : 'LIVE'}</span>
             </button>
 
             <button
               onClick={() => setShowResetConfirm(true)}
-              className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg border border-slate-800 transition-colors"
-              title="Reset Demo Data"
+              className="p-1 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-white transition-all"
+              title="Reset simulation"
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
-
-        {/* Mobile Navigation bar */}
-        <div className="flex md:hidden overflow-x-auto py-2 space-x-1 border-t border-slate-800/80">
-          {(['overview', 'services', 'network', 'incidents', 'clustering', 'scenarios'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-2.5 py-1 rounded text-xs whitespace-nowrap capitalize ${
-                activeTab === tab ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 font-medium' : 'text-slate-400'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
       </div>
 
-      {/* Confirmation Modal */}
       {showResetConfirm && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#10172A] border border-slate-700 rounded-2xl max-w-sm w-full p-5 shadow-2xl">
-            <div className="flex items-center space-x-3 text-cyan-400 mb-3">
-              <RotateCcw className="w-6 h-6" />
-              <h3 className="font-semibold text-white text-base">Reset CampusPulse State?</h3>
-            </div>
-            <p className="text-xs text-slate-300 mb-4 leading-relaxed">
-              This will restore the 8 campus services to nominal baseline, reset active incidents, clear simulation outages, and recompute initial clusters.
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[#121215] border border-rose-800/80 p-5 max-w-sm w-full font-mono text-zinc-300 shadow-2xl">
+            <h3 className="text-sm font-bold uppercase text-rose-400">&gt;&gt;&gt; FLUSH INCIDENT TELEMETRY?</h3>
+            <p className="text-xs text-zinc-400 mt-2">
+              All triggered chaos scenarios, open incidents, and clustering graphs will reset to initial state.
             </p>
-            <div className="flex justify-end space-x-2">
+            <div className="mt-4 flex justify-end space-x-2 text-xs">
               <button
                 onClick={() => setShowResetConfirm(false)}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800"
+                className="px-3 py-1 border border-zinc-700 text-zinc-400 hover:text-white"
               >
-                Cancel
+                ABORT
               </button>
               <button
                 onClick={() => {
                   resetToDemoData();
                   setShowResetConfirm(false);
                 }}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-cyan-600 hover:bg-cyan-500 text-white font-semibold"
+                className="px-3 py-1 bg-rose-600 text-white font-bold hover:bg-rose-500"
               >
-                Confirm Reset
+                CONFIRM RESET
               </button>
             </div>
           </div>

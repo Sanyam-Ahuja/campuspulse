@@ -2,25 +2,17 @@
 
 @layer base {
   body {
-    font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+    background-color: #09090b;
+    color: #f43f5e;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   }
-  code, pre, .font-mono {
+
+  .alert-border {
+    border-color: rgba(244, 63, 94, 0.4);
+    box-shadow: 0 0 15px rgba(244, 63, 94, 0.15);
+  }
+
+  code, pre {
     font-family: 'JetBrains Mono', monospace;
   }
-}
-
-/* Custom scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #090e1a;
-}
-::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #334155;
 }
