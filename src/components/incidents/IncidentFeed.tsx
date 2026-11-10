@@ -1,291 +1,73 @@
 import React, { useState } from 'react';
 import { useCampusPulseStore } from '../../store/useCampusPulseStore';
 import { CampusIncident, IncidentSeverity, IncidentStatus } from '../../types';
-import { AlertTriangle, Plus, Search, Filter, ShieldAlert, CheckCircle2, Clock } from 'lucide-react';
+import { Pane, Sev } from '../term';
 
 export const IncidentFeed: React.FC = () => {
   const { incidents, services, createIncident, setSelectedIncidentId } = useCampusPulseStore();
+  const [q, setQ] = useState('');
+  const [sev, setSev] = useState<'all' | IncidentSeverity>('all');
+  const [st, setSt] = useState<'all' | IncidentStatus>('all');
+  const [filing, setFiling] = useState(false);
+  const [f, setF] = useState({ title: '', serviceId: services[0]?.id || '', severity: 'P2_MAJOR' as IncidentSeverity, category: 'network' as CampusIncident['category'], location: '', description: '' });
 
-  const [search, setSearch] = useState('');
-  const [severityFilter, setSeverityFilter] = useState<'all' | IncidentSeverity>('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | IncidentStatus>('all');
-  const [showModal, setShowModal] = useState(false);
+  const t = q.toLowerCase();
+  const rows = incidents.filter((i) => (sev === 'all' || i.severity === sev) && (st === 'all' || i.status === st) && (!t || [i.id, i.title, i.location, i.serviceName].some((x) => x.toLowerCase().includes(t))));
 
-  // Form states
-  const [title, setTitle] = useState('');
-  const [serviceId, setServiceId] = useState(services[0]?.id || '');
-  const [severity, setSeverity] = useState<IncidentSeverity>('P2_MAJOR');
-  const [category, setCategory] = useState<CampusIncident['category']>('network');
-  const [location, setLocation] = useState('');
-  const [description, setDescription] = useState('');
-
-  const filtered = incidents.filter((inc) => {
-    if (severityFilter !== 'all' && inc.severity !== severityFilter) return false;
-    if (statusFilter !== 'all' && inc.status !== statusFilter) return false;
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      const match =
-        inc.id.toLowerCase().includes(q) ||
-        inc.title.toLowerCase().includes(q) ||
-        inc.location.toLowerCase().includes(q) ||
-        inc.serviceName.toLowerCase().includes(q);
-      if (!match) return false;
-    }
-    return true;
-  });
-
-  const handleCreate = (e: React.FormEvent) => {
+  const file = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !location.trim()) return;
-    const srv = services.find((s) => s.id === serviceId);
-
-    createIncident({
-      title,
-      severity,
-      status: 'investigating',
-      serviceId,
-      serviceName: srv ? srv.name : 'General Infrastructure',
-      location,
-      category,
-      description,
-    });
-
-    setShowModal(false);
-    setTitle('');
-    setLocation('');
-    setDescription('');
+    if (!f.title.trim() || !f.location.trim()) return;
+    const s = services.find((x) => x.id === f.serviceId);
+    createIncident({ title: f.title.trim(), severity: f.severity, status: 'investigating', serviceId: f.serviceId, serviceName: s ? s.name : 'General infrastructure', location: f.location.trim(), category: f.category, description: f.description.trim() });
+    setFiling(false);
+    setF({ ...f, title: '', location: '', description: '' });
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-[#10172A] border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center space-x-2 text-rose-400 mb-1">
-            <AlertTriangle className="w-5 h-5" />
-            <h3 className="font-bold text-white text-lg">SRE Incident Management</h3>
-          </div>
-          <p className="text-xs text-slate-400">
-            Lifecycle tracking from automated detection to root cause investigation, mitigation, and post-mortem.
-          </p>
+    <div className="grid gap-1.5 md:gap-2">
+      <Pane title="Incident blotter" right={<span>{rows.length} OF {incidents.length}</span>}>
+        <div className="flex flex-wrap gap-1.5 p-2 border-b border-grid">
+          <input className="tin flex-1 min-w-[200px]" value={q} onChange={(e) => setQ(e.target.value)} placeholder="ticket, building, service" aria-label="Search incidents" />
+          <select className="tin !w-auto" value={sev} onChange={(e) => setSev(e.target.value as 'all' | IncidentSeverity)} aria-label="Severity">
+            <option value="all">ALL SEV</option><option value="P1_CRITICAL">P1</option><option value="P2_MAJOR">P2</option><option value="P3_MINOR">P3</option><option value="P4_LOW">P4</option>
+          </select>
+          <select className="tin !w-auto" value={st} onChange={(e) => setSt(e.target.value as 'all' | IncidentStatus)} aria-label="Status">
+            <option value="all">ALL STATE</option><option value="investigating">INVESTIGATING</option><option value="identified">IDENTIFIED</option><option value="mitigating">MITIGATING</option><option value="resolved">RESOLVED</option>
+          </select>
+          <button className="kbtn kbtn-go" onClick={() => setFiling(!filing)}>{filing ? 'Close' : 'New ticket'}</button>
         </div>
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-lg shadow-rose-600/20 self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>File Incident Report</span>
-        </button>
-      </div>
+        {filing && (
+          <form onSubmit={file} className="grid md:grid-cols-6 gap-2 p-2 border-b border-grid bg-[#0d0d0d]">
+            <label className="md:col-span-3"><span className="lbl">Title</span><input className="tin mt-0.5" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} placeholder="Fibre loss between DC-A and library" required /></label>
+            <label className="md:col-span-3"><span className="lbl">Location</span><input className="tin mt-0.5" value={f.location} onChange={(e) => setF({ ...f, location: e.target.value })} placeholder="Science Quad 2, vault B" required /></label>
+            <label className="md:col-span-2"><span className="lbl">Service</span><select className="tin mt-0.5" value={f.serviceId} onChange={(e) => setF({ ...f, serviceId: e.target.value })}>{services.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
+            <label><span className="lbl">Severity</span><select className="tin mt-0.5" value={f.severity} onChange={(e) => setF({ ...f, severity: e.target.value as IncidentSeverity })}><option value="P1_CRITICAL">P1 critical</option><option value="P2_MAJOR">P2 major</option><option value="P3_MINOR">P3 minor</option><option value="P4_LOW">P4 low</option></select></label>
+            <label><span className="lbl">Category</span><select className="tin mt-0.5" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value as CampusIncident['category'] })}>{['network', 'hardware', 'power', 'software', 'security'].map((c) => <option key={c}>{c}</option>)}</select></label>
+            <label className="md:col-span-2"><span className="lbl">Detail</span><input className="tin mt-0.5" value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} placeholder="optical levels, error codes, users hit" /></label>
+            <div className="md:col-span-6 flex justify-end"><button className="kbtn kbtn-go">File</button></div>
+          </form>
+        )}
 
-      {/* Filter Bar */}
-      <div className="bg-[#10172A] border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by ticket ID, building, title, or service..."
-              className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 font-mono"
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={severityFilter}
-              onChange={(e) => setSeverityFilter(e.target.value as any)}
-              className="px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-mono"
-            >
-              <option value="all">All Severities</option>
-              <option value="P1_CRITICAL">P1 Critical</option>
-              <option value="P2_MAJOR">P2 Major</option>
-              <option value="P3_MINOR">P3 Minor</option>
-              <option value="P4_LOW">P4 Low</option>
-            </select>
-
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-mono"
-            >
-              <option value="all">All Statuses</option>
-              <option value="investigating">Investigating</option>
-              <option value="identified">Identified</option>
-              <option value="mitigating">Mitigating</option>
-              <option value="resolved">Resolved</option>
-            </select>
-          </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-[12px]">
+            <thead><tr className="text-mute text-left"><th className="px-2 py-1 font-normal w-8">SEV</th><th className="font-normal w-32">TICKET</th><th className="font-normal">TITLE</th><th className="font-normal">LOCATION</th><th className="font-normal">STATE</th><th className="font-normal text-right pr-2">OPENED</th></tr></thead>
+            <tbody>
+              {rows.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-mute">NO TICKETS MATCH THIS FILTER</td></tr>}
+              {rows.map((i) => (
+                <tr key={i.id} onClick={() => setSelectedIncidentId(i.id)} className={`row cursor-pointer ${i.status === 'resolved' ? 'opacity-50' : ''}`}>
+                  <td className="px-2 py-1.5"><Sev s={i.severity} /></td>
+                  <td className="text-amber">{i.id}</td>
+                  <td className="text-val pr-3">{i.title}</td>
+                  <td className="text-mute pr-3">{i.location}</td>
+                  <td className={`uppercase ${i.status === 'resolved' ? 'text-up' : ''}`}>{i.status}</td>
+                  <td className="text-right pr-2 text-mute whitespace-nowrap">{i.reportedAt}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-
-        <div className="text-xs text-slate-400">
-          Showing <strong className="text-white font-mono">{filtered.length}</strong> incident tickets
-        </div>
-      </div>
-
-      {/* Incidents List */}
-      <div className="space-y-3">
-        {filtered.map((inc) => (
-          <div
-            key={inc.id}
-            onClick={() => setSelectedIncidentId(inc.id)}
-            className="p-5 rounded-2xl bg-[#10172A] border border-slate-800 hover:border-slate-700 transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 text-left group"
-          >
-            <div className="space-y-1.5 max-w-2xl">
-              <div className="flex items-center space-x-2">
-                <span className="font-mono text-xs font-bold text-slate-300 group-hover:text-cyan-400 transition-colors">
-                  {inc.id}
-                </span>
-                <span
-                  className={`px-2 py-0.5 rounded text-[10px] font-mono border uppercase font-bold ${
-                    inc.severity === 'P1_CRITICAL'
-                      ? 'bg-rose-500/20 text-rose-400 border-rose-500/40'
-                      : inc.severity === 'P2_MAJOR'
-                      ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
-                      : 'bg-slate-800 text-slate-300 border-slate-700'
-                  }`}
-                >
-                  {inc.severity.replace('_', ' ')}
-                </span>
-                <span className="text-[11px] font-mono text-slate-500">• Reported {inc.reportedAt}</span>
-              </div>
-              <h4 className="text-sm font-semibold text-white">{inc.title}</h4>
-              <p className="text-xs text-slate-400 leading-relaxed">{inc.description}</p>
-              <div className="flex items-center space-x-3 text-[11px] font-mono text-slate-400 pt-1">
-                <span>Location: <strong className="text-slate-300">{inc.location}</strong></span>
-                <span>•</span>
-                <span>Service: <strong className="text-cyan-400">{inc.serviceName}</strong></span>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-3 self-start md:self-center font-mono text-xs">
-              <span
-                className={`px-2.5 py-1 rounded-lg border uppercase font-semibold ${
-                  inc.status === 'resolved'
-                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                    : inc.status === 'mitigating'
-                    ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
-                    : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                }`}
-              >
-                {inc.status}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* New Incident Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#10172A] border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
-            <h3 className="font-bold text-white text-base mb-4 flex items-center space-x-2 text-rose-400">
-              <ShieldAlert className="w-5 h-5" />
-              <span>Create Infrastructure Incident</span>
-            </h3>
-            <form onSubmit={handleCreate} className="space-y-3">
-              <div>
-                <label className="text-xs font-medium text-slate-300 block mb-1">Incident Title</label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Fiber link degradation between DC-A and Library"
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-medium text-slate-300 block mb-1">Affected Service</label>
-                  <select
-                    value={serviceId}
-                    onChange={(e) => setServiceId(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-rose-500"
-                  >
-                    {services.map((srv) => (
-                      <option key={srv.id} value={srv.id}>
-                        {srv.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-slate-300 block mb-1">Severity Level</label>
-                  <select
-                    value={severity}
-                    onChange={(e) => setSeverity(e.target.value as any)}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-rose-500"
-                  >
-                    <option value="P1_CRITICAL">P1 - Critical Campus Outage</option>
-                    <option value="P2_MAJOR">P2 - Major Facility Degradation</option>
-                    <option value="P3_MINOR">P3 - Minor Subsystem Fault</option>
-                    <option value="P4_LOW">P4 - Low / Cosmetic Anomaly</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-medium text-slate-300 block mb-1">Location</label>
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="e.g. Science Quad 2, Vault B"
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-slate-300 block mb-1">Category</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value as any)}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-rose-500"
-                  >
-                    <option value="network">Network & Routing</option>
-                    <option value="hardware">Hardware & Transceivers</option>
-                    <option value="power">Power & Facilities</option>
-                    <option value="software">Software & Services</option>
-                    <option value="security">Security & DDoS</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-slate-300 block mb-1">Diagnostic Description</label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Include error codes, optical levels, or affected user count..."
-                  rows={3}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-3 py-1.5 text-xs text-slate-400 hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-semibold"
-                >
-                  File Incident
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      </Pane>
     </div>
   );
 };

@@ -1,18 +1,56 @@
 @import "tailwindcss";
 
-@layer base {
-  body {
-    background-color: #09090b;
-    color: #f43f5e;
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  }
-
-  .alert-border {
-    border-color: rgba(244, 63, 94, 0.4);
-    box-shadow: 0 0 15px rgba(244, 63, 94, 0.15);
-  }
-
-  code, pre {
-    font-family: 'JetBrains Mono', monospace;
-  }
+/* CampusPulse — a market-data terminal for campus infrastructure.
+   Black screen, amber text, white for live values, blue title bars on every panel,
+   yellow function keys, green/red only for better/worse. Dense by design. */
+@theme {
+  --color-screen: #000000;
+  --color-pane: #0a0a0a;
+  --color-amber: #ffa028;
+  --color-amberdim: #b5762a;
+  --color-val: #f2f2f2;
+  --color-titlebar: #1c2f8f;
+  --color-fkey: #f5d000;
+  --color-up: #3ddc84;
+  --color-down: #ff4d4d;
+  --color-grid: #2a2a2a;
+  --color-mute: #8a8a8a;
+  --font-mono: "Martian Mono", ui-monospace, monospace;
 }
+
+@layer base {
+  body { background: var(--color-screen); color: var(--color-amber); font-family: var(--font-mono); font-stretch: 82%; font-size: 13px; -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
+  ::selection { background: var(--color-amber); color: #000; }
+  :focus-visible { outline: 1px solid var(--color-fkey); outline-offset: 1px; }
+  input, select, textarea, button { font: inherit; font-stretch: inherit; }
+}
+
+@layer components {
+  .pane { background: var(--color-pane); border: 1px solid var(--color-grid); display: flex; flex-direction: column; min-width: 0; }
+  .bar { background: var(--color-titlebar); color: #fff; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 3px 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; }
+  .fkey { background: var(--color-fkey); color: #000; font-weight: 700; padding: 1px 6px; }
+  .kbtn { border: 1px solid var(--color-amberdim); color: var(--color-amber); padding: 3px 10px; text-transform: uppercase; font-weight: 600; }
+  .kbtn:hover:not(:disabled) { background: var(--color-amber); color: #000; }
+  .kbtn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .kbtn-go { background: var(--color-fkey); color: #000; border-color: var(--color-fkey); }
+  .kbtn-go:hover:not(:disabled) { background: #fff; border-color: #fff; }
+  .kbtn-red { border-color: var(--color-down); color: var(--color-down); }
+  .kbtn-red:hover:not(:disabled) { background: var(--color-down); color: #000; }
+  .tin { background: #000; border: 1px solid var(--color-grid); color: var(--color-val); padding: 4px 8px; width: 100%; }
+  .tin:focus { outline: none; border-color: var(--color-amber); }
+  .tin::placeholder { color: #5a5a5a; }
+  .row { border-bottom: 1px solid #161616; }
+  .row:hover { background: #151515; }
+  .lbl { color: var(--color-mute); text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; }
+}
+
+@keyframes tick { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.ticker { animation: tick 60s linear infinite; }
+.ticker:hover { animation-play-state: paused; }
+@keyframes blink { 50% { opacity: 0; } }
+.cursor { animation: blink 1s steps(1) infinite; }
+@media (prefers-reduced-motion: reduce) { .ticker, .cursor { animation: none; } }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #000; }
+::-webkit-scrollbar-thumb { background: #333; }

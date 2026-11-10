@@ -1,129 +1,73 @@
 import React from 'react';
 import { useCampusPulseStore } from '../../store/useCampusPulseStore';
-import {
-  AreaChart,
-  Area,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-} from 'recharts';
-import { Network, Activity, Radio, Zap, Clock, ShieldCheck } from 'lucide-react';
+import { Delta, Pane, chartAxis, chartTip } from '../term';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from 'recharts';
 
 export const NetworkAnalytics: React.FC = () => {
   const { telemetry } = useCampusPulseStore();
+  const now = telemetry[telemetry.length - 1];
+  const prev = telemetry[telemetry.length - 2];
+  const col = (k: 'latencyMs' | 'packetLossPct' | 'throughputGbps' | 'jitterMs') => telemetry.map((t) => t[k]);
+  const stats = (xs: number[]) => ({ lo: Math.min(...xs), hi: Math.max(...xs), avg: xs.reduce((a, b) => a + b, 0) / (xs.length || 1) });
 
-  const latest = telemetry[telemetry.length - 1] || {
-    latencyMs: 14,
-    packetLossPct: 0.05,
-    throughputGbps: 42.1,
-    jitterMs: 1.8,
-  };
+  const rows = [
+    { k: 'latencyMs' as const, label: 'RTT', unit: 'ms', down: true },
+    { k: 'jitterMs' as const, label: 'JITTER', unit: 'ms', down: true },
+    { k: 'packetLossPct' as const, label: 'LOSS', unit: '%', down: true },
+    { k: 'throughputGbps' as const, label: 'THRUPUT', unit: 'G', down: false },
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-[#10172A] border border-slate-800 rounded-2xl p-5 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center space-x-2 text-cyan-400 mb-1">
-              <Network className="w-5 h-5" />
-              <h3 className="font-bold text-white text-lg">Campus Core Network Analytics</h3>
-            </div>
-            <p className="text-xs text-slate-400">
-              High-frequency synthetic probes capturing BGP round-trip latency, transport packet loss, and optical switch throughput.
-            </p>
+    <div className="grid gap-1.5 md:gap-2">
+      <Pane title="Probe statistics · window of 25" bodyClass="overflow-x-auto">
+        <table className="w-full min-w-[560px] text-[12.5px]">
+          <thead><tr className="text-mute text-left"><th className="px-2 py-1 font-normal">METRIC</th><th className="font-normal text-right">LAST</th><th className="font-normal text-right">CHG</th><th className="font-normal text-right">LOW</th><th className="font-normal text-right">HIGH</th><th className="font-normal text-right pr-2">AVG</th></tr></thead>
+          <tbody>
+            {rows.map((r) => {
+              const s = stats(col(r.k));
+              return (
+                <tr key={r.k} className="row">
+                  <td className="px-2 py-1.5 text-amber font-bold">{r.label}</td>
+                  <td className="text-right text-val text-[15px]">{now?.[r.k]}{r.unit}</td>
+                  <td className="text-right"><Delta now={now?.[r.k] ?? 0} prev={prev?.[r.k]} goodWhenDown={r.down} digits={2} /></td>
+                  <td className="text-right text-val">{s.lo.toFixed(2)}</td>
+                  <td className="text-right text-val">{s.hi.toFixed(2)}</td>
+                  <td className="text-right pr-2 text-val">{s.avg.toFixed(2)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </Pane>
+      <div className="grid xl:grid-cols-2 gap-1.5 md:gap-2">
+        <Pane title="RTT & jitter · ms" right={<span><span className="text-amber">━</span> RTT  <span className="text-val">┅</span> JITTER</span>}>
+          <div className="h-[300px] p-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={telemetry} margin={{ top: 6, right: 6, left: -18, bottom: 0 }}>
+                <CartesianGrid stroke="#1a1a1a" />
+                <XAxis dataKey="time" {...chartAxis} />
+                <YAxis {...chartAxis} />
+                <Tooltip {...chartTip} />
+                <Line dataKey="latencyMs" name="RTT" stroke="#ffa028" strokeWidth={1.75} dot={false} isAnimationActive={false} />
+                <Line dataKey="jitterMs" name="Jitter" stroke="#f2f2f2" strokeWidth={1.25} strokeDasharray="3 3" dot={false} isAnimationActive={false} />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
-          <div className="flex items-center space-x-3 text-xs font-mono">
-            <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300">
-              Probing Rate: <strong className="text-cyan-400">4s interval</strong>
-            </span>
+        </Pane>
+        <Pane title="Backbone throughput · Gbps" right="100GbE ring">
+          <div className="h-[300px] p-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={telemetry} margin={{ top: 6, right: 6, left: -18, bottom: 0 }}>
+                <CartesianGrid stroke="#1a1a1a" />
+                <XAxis dataKey="time" {...chartAxis} />
+                <YAxis {...chartAxis} />
+                <Tooltip {...chartTip} />
+                <ReferenceLine y={stats(col('throughputGbps')).avg} stroke="#5a5a5a" strokeDasharray="4 4" />
+                <Line dataKey="throughputGbps" name="Gbps" stroke="#3ddc84" strokeWidth={1.75} dot={false} isAnimationActive={false} />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
-        </div>
-      </div>
-
-      {/* Top 3 Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-4 rounded-xl bg-[#10172A] border border-slate-800">
-          <div className="flex justify-between items-center text-slate-400 mb-1 text-xs">
-            <span className="uppercase font-mono">Latency & Jitter</span>
-            <Activity className="w-4 h-4 text-cyan-400" />
-          </div>
-          <div className="text-2xl font-bold font-mono text-white">{latest.latencyMs} ms</div>
-          <span className="text-xs text-cyan-400 font-mono">±{latest.jitterMs} ms jitter</span>
-        </div>
-
-        <div className="p-4 rounded-xl bg-[#10172A] border border-slate-800">
-          <div className="flex justify-between items-center text-slate-400 mb-1 text-xs">
-            <span className="uppercase font-mono">Packet Drop Rate</span>
-            <Radio className="w-4 h-4 text-rose-400" />
-          </div>
-          <div className="text-2xl font-bold font-mono text-white">{latest.packetLossPct}%</div>
-          <span className="text-xs text-slate-400 font-mono">Threshold SLA: &lt; 1.0%</span>
-        </div>
-
-        <div className="p-4 rounded-xl bg-[#10172A] border border-slate-800">
-          <div className="flex justify-between items-center text-slate-400 mb-1 text-xs">
-            <span className="uppercase font-mono">Optical Core Aggregate</span>
-            <Zap className="w-4 h-4 text-indigo-400" />
-          </div>
-          <div className="text-2xl font-bold font-mono text-white">{latest.throughputGbps} Gbps</div>
-          <span className="text-xs text-indigo-400 font-mono">Bandwidth Utilization</span>
-        </div>
-      </div>
-
-      {/* Chart 1: Latency & Jitter */}
-      <div className="bg-[#10172A] border border-slate-800 rounded-2xl p-5 shadow-xl">
-        <div className="flex items-center justify-between mb-4">
-          <h4 className="text-sm font-bold text-white flex items-center space-x-2">
-            <Activity className="w-4 h-4 text-cyan-400" />
-            <span>Round-Trip Latency (RTT) & Jitter History</span>
-          </h4>
-          <span className="text-xs text-slate-400 font-mono">Last 25 probe samples</span>
-        </div>
-        <div className="h-56 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={telemetry} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-              <XAxis dataKey="time" stroke="#64748b" tick={{ fontSize: 11 }} />
-              <YAxis stroke="#64748b" tick={{ fontSize: 11 }} unit="ms" />
-              <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', fontSize: '11px' }} />
-              <Line type="monotone" dataKey="latencyMs" stroke="#06b6d4" strokeWidth={2} dot={false} name="Latency (ms)" />
-              <Line type="monotone" dataKey="jitterMs" stroke="#818cf8" strokeWidth={2} strokeDasharray="4 4" dot={false} name="Jitter (ms)" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Chart 2: Optical Throughput */}
-      <div className="bg-[#10172A] border border-slate-800 rounded-2xl p-5 shadow-xl">
-        <div className="flex items-center justify-between mb-4">
-          <h4 className="text-sm font-bold text-white flex items-center space-x-2">
-            <Zap className="w-4 h-4 text-indigo-400" />
-            <span>Campus Optical Backbone Throughput (Gbps)</span>
-          </h4>
-          <span className="text-xs text-slate-400 font-mono">100GbE Capacity</span>
-        </div>
-        <div className="h-56 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={telemetry} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <defs>
-                <linearGradient id="tpGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#818cf8" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#818cf8" stopOpacity={0.0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-              <XAxis dataKey="time" stroke="#64748b" tick={{ fontSize: 11 }} />
-              <YAxis stroke="#64748b" tick={{ fontSize: 11 }} unit="G" />
-              <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', fontSize: '11px' }} />
-              <Area type="monotone" dataKey="throughputGbps" stroke="#818cf8" strokeWidth={2} fill="url(#tpGrad)" name="Throughput (Gbps)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
+        </Pane>
       </div>
     </div>
   );
